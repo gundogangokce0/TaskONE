@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Teacher Management</title>
+</head>
+
+<body>
+
+    <h1>Teacher</h1>
+
+    <label for="name">
+        Teacher Name:
+    </label>
+
+    <input
+        type="text"
+        id="name"
+        placeholder="Enter teacher name"
+    >
+
+    <br><br>
+
+    <label for="off_day">
+        Off Day:
+    </label>
+
+    <select id="off_day">
+
+        <option value="Monday">
+            Monday
+        </option>
+
+        <option value="Tuesday">
+            Tuesday
+        </option>
+
+        <option value="Wednesday">
+            Wednesday
+        </option>
+
+        <option value="Thursday">
+            Thursday
+        </option>
+
+        <option value="Friday">
+            Friday
+        </option>
+
+    </select>
+
+    <br><br>
+
+    <button id="saveButton">
+        Save Teacher
+    </button>
+
+    <p id="message"></p>
+
+<p id="message"></p>
+
+<script>
+
+    const saveButton = document.getElementById("saveButton");
+
+    saveButton.addEventListener("click", async function () {
+
+        const name = document.getElementById("name").value;
+
+        const off_day = document.getElementById("off_day").value;
+
+        const response = await fetch(
+            "http://127.0.0.1:8000/api/teachers/create/",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    name: name,
+                    off_day: off_day
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        document.getElementById("message").innerText =
+            data.message;
+
+    });
+
+</script>
+
+</body>
+</html>
+</body>
+</html>

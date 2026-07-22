@@ -1,4 +1,4 @@
-from .models import Schedule
+from .config.models import Schedule
 def is_teacher_available(teacher, time_slot, current_schedule):
     if teacher.off_day == time_slot.day:
         return False
