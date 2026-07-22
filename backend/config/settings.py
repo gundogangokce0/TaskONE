@@ -83,7 +83,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'schooldb',       # <-- Veritabanı Adı
         'USER': 'postgres',        # <-- Kullanıcı Adı
-        'PASSWORD': '11112001Megasa',# <-- Şifre
+        'PASSWORD': '2004gg',# <-- Şifre
         'HOST': 'localhost',       # <-- Sunucu
         'PORT': '5432',            # <-- Port
     }
