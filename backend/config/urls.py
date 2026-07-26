@@ -16,18 +16,29 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from teacher.views import login_user, ProtectedView
 
 
 urlpatterns = [
-
-    path(
+    path(     
         "admin/",
         admin.site.urls
+    ),
+
+    path(
+        "api/login/",
+        login_user,
+        name="login_user"
+    ),
+
+    path(
+        "api/protected/",
+        ProtectedView.as_view(),
+        name="protected"
     ),
 
     path(
         "api/teachers/",
         include("teacher.urls")
     ),
-
-]
+]       

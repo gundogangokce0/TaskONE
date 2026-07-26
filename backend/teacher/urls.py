@@ -1,6 +1,6 @@
 from django.urls import path
-
-from .views import create_teacher, login_user, ProtectedView
+from .views import create_teacher
+from teacher.views import login_user, ProtectedView
  
 
 urlpatterns = [
@@ -9,14 +9,11 @@ urlpatterns = [
         create_teacher,
         name="create_teacher",
     ),
+    path("api/login/", login_user, name="login_user"),
+
     path(
-        "login/",
-        login_user,
-        name="login_user",
-    ),
-    path(
-    "protected/",
+    "api/protected/",
     ProtectedView.as_view(),
     name="protected",
-    ),
-]
+),
+]  
