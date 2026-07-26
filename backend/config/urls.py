@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from teacher.views import login_user, ProtectedView
+from model.views import login_user, ProtectedView
 
 
 urlpatterns = [
@@ -38,7 +38,7 @@ urlpatterns = [
     ),
 
     path(
-        "api/teachers/",
-        include("teacher.urls")
+        "api/",
+        include("model.urls")
     ),
-]       
+]
