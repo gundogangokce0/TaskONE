@@ -98,55 +98,6 @@ class ScheduleViewSet(viewsets.ModelViewSet):
         return Response({"message": "Schedule generated successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
 
 
-def login_user(request):
-    if request.method != "POST":
-        return JsonResponse(
-            {"error": "Only POST method is allowed"},
-            status=405,
-        )
-
-    try:
-        data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse(
-            {"error": "Invalid JSON data"},
-            status=400,
-        )
-
-    username = data.get("username")
-    password = data.get("password")
-
-    if not username or not password:
-        return JsonResponse(
-            {"error": "Username and password are required"},
-            status=400,
-        )
-
-    user = authenticate(
-        username=username,
-        password=password,
-    )
-
-    if user is None:
-        return JsonResponse(
-            {"error": "Invalid username or password"},
-            status=401,
-        )
-
-    refresh = RefreshToken.for_user(user)
-
-    return JsonResponse(
-        {
-            "message": "Login successful",
-            "user": {
-                "id": user.id,
-                "username": user.username,
-            },
-            "access": str(refresh.access_token),
-            "refresh": str(refresh),
-        },
-        status=200,
-    )
 
 
 class ProtectedView(APIView):

@@ -76,7 +76,10 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import { authService } from '../services'
+
+const router = useRouter()
 
 const form = reactive({
   username: '',
@@ -116,6 +119,11 @@ const handleSubmit = async () => {
     }
 
     successMessage.value = res.message || 'Login successful!'
+
+    // Automatically navigate to /teachers page after login
+    setTimeout(() => {
+      router.push('/teachers')
+    }, 800)
   } catch (err: any) {
     if (err.response && err.response.data && err.response.data.error) {
       errorMessage.value = err.response.data.error

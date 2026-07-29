@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-6jle8rpasi^3ggaul2=!5w7jkac2n=9rh_)=7e55yy%*i+%tdc
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'rest_framework',
 
     'core',
+    'auth.apps.CustomAuthConfig',
+    'model',
     'teacher',
     'course',
     'classroom',
@@ -55,10 +57,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'core.middleware.APICSRFExemptMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'core.middleware.APICSRFExemptMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'core.middleware.JWTAuthenticationMiddleware',

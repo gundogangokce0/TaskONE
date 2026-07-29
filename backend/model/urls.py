@@ -8,6 +8,7 @@ from .views import (
     TimeSlotViewSet,
     CourseRequirementViewSet,
     ScheduleViewSet,
+    ProtectedView,
 )
 
 router = DefaultRouter()
@@ -20,5 +21,6 @@ router.register(r'course-requirements', CourseRequirementViewSet, basename='cour
 router.register(r'schedules', ScheduleViewSet, basename='schedule')
 
 urlpatterns = [
+    path("protected/", ProtectedView.as_view(), name="protected"),
     path("", include(router.urls)),
 ]

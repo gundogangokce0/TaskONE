@@ -1,6 +1,4 @@
-import axios from 'axios'
-
-const API_BASE_URL = 'http://127.0.0.1:8000/api'
+import api from '../../services/api'
 
 export interface LoginPayload {
   username: string
@@ -18,9 +16,22 @@ export interface LoginResponse {
   error?: string
 }
 
+export interface UserMeResponse {
+  id: number
+  username: string
+  email: string
+  first_name: string
+  last_name: string
+  is_staff: boolean
+}
+
 export const authService = {
   async login(payload: LoginPayload): Promise<LoginResponse> {
-    const response = await axios.post<LoginResponse>(`${API_BASE_URL}/login/`, payload)
+    const response = await api.post<LoginResponse>('/auth/login/', payload)
+    return response.data
+  },
+  async getMe(): Promise<UserMeResponse> {
+    const response = await api.get<UserMeResponse>('/auth/me/')
     return response.data
   }
 }
