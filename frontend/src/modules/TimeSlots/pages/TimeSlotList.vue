@@ -1,30 +1,47 @@
 <template>
   <div class="time-slots-page">
+    <!-- Page Header with Action Button -->
     <div class="page-header">
-      <h2>⏰ Time Slot Management</h2>
-      <p>Add, update, or remove timetable periods and daily schedule slots.</p>
+      <div class="header-text">
+        <h2>⏰ {{ t.timeSlotsTitle }}</h2>
+        <p>{{ t.timeSlotsSub }}</p>
+      </div>
+      <button class="btn btn-add-timeslot" @click="openCreateModal">
+        <span>➕ {{ t.addTimeSlotBtn }}</span>
+      </button>
     </div>
 
     <!-- Alert Notifications -->
     <div v-if="errorMessage" class="alert alert-error">
-      <span>{{ errorMessage }}</span>
+      <span>⚠️ {{ errorMessage }}</span>
     </div>
     <div v-if="successMessage" class="alert alert-success">
-      <span>{{ successMessage }}</span>
+      <span>✅ {{ successMessage }}</span>
     </div>
 
-    <!-- TimeSlot Form Component -->
+    <!-- Modal Dialog Component (Add / Edit) -->
     <TimeSlotForm
+      :is-open="isModalOpen"
+      :title="isEditing ? t.editTimeSlotModalTitle : t.addTimeSlotModalTitle"
       :selected-slot="selectedSlot"
       :is-editing="isEditing"
       @save="handleSave"
-      @cancel="cancelEdit"
+      @cancel="closeModal"
+    />
+
+    <!-- Shared Reusable Delete Confirmation Modal -->
+    <ConfirmDeleteModal
+      :is-open="isDeleteModalOpen"
+      :title="t.editTimeSlotModalTitle"
+      :message="deleteModalMessage"
+      @confirm="confirmDelete"
+      @cancel="closeDeleteModal"
     />
 
     <!-- Loading Spinner -->
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>Loading time slots...</p>
+      <p>Loading...</p>
     </div>
 
     <!-- TimeSlot Table Component -->
@@ -32,33 +49,46 @@
       v-else
       :time-slots="timeSlots"
       @edit="startEdit"
-      @delete="handleDelete"
+      @delete="handleDeleteClick"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import TimeSlotForm from '../components/TimeSlotForm.vue'
 import TimeSlotTable from '../components/TimeSlotTable.vue'
+import ConfirmDeleteModal from '../../../components/ConfirmDeleteModal.vue'
 import { timeSlotService, type TimeSlot } from '../services'
+import { t } from '../../../i18n'
 
 const timeSlots = ref<TimeSlot[]>([])
 const loading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
+// Form Modal State (Add / Edit)
+const isModalOpen = ref(false)
 const selectedSlot = ref<TimeSlot | null>(null)
 const isEditing = ref(false)
 
-// 1. Fetch Time Slots on Component Mount
+// Delete Modal State
+const isDeleteModalOpen = ref(false)
+const slotToDelete = ref<TimeSlot | null>(null)
+
+const deleteModalMessage = computed(() => {
+  if (!slotToDelete.value) return ''
+  return `"${slotToDelete.value.day} - Period ${slotToDelete.value.hour}" ${t.value.confirmDeleteTimeSlot}`
+})
+
+// 1. Fetch TimeSlots on Component Mount
 const fetchTimeSlots = async () => {
   loading.value = true
   errorMessage.value = ''
   try {
     timeSlots.value = await timeSlotService.getTimeSlots()
   } catch (err: any) {
-    errorMessage.value = 'Failed to load time slots from backend.'
+    errorMessage.value = 'Failed to fetch time slot list from backend server.'
   } finally {
     loading.value = false
   }
@@ -68,75 +98,119 @@ onMounted(() => {
   fetchTimeSlots()
 })
 
-// 2. Handle Save (Create or Update)
+// 2. Open Create Modal
+const openCreateModal = () => {
+  selectedSlot.value = null
+  isEditing.value = false
+  isModalOpen.value = true
+}
+
+// 3. Start Edit Modal
+const startEdit = (ts: TimeSlot) => {
+  selectedSlot.value = ts
+  isEditing.value = true
+  isModalOpen.value = true
+}
+
+// 4. Close Form Modal
+const closeModal = () => {
+  isModalOpen.value = false
+}
+
+// 5. Handle Save (Create or Update)
 const handleSave = async (payload: TimeSlot) => {
   errorMessage.value = ''
   successMessage.value = ''
   try {
     if (isEditing.value && selectedSlot.value?.id) {
       await timeSlotService.updateTimeSlot(selectedSlot.value.id, payload)
-      successMessage.value = 'Time slot updated successfully!'
+      successMessage.value = t.value.msgTimeSlotUpdated
     } else {
       await timeSlotService.createTimeSlot(payload)
-      successMessage.value = 'Time slot created successfully!'
+      successMessage.value = t.value.msgTimeSlotAdded
     }
-    cancelEdit()
+    closeModal()
     await fetchTimeSlots()
   } catch (err: any) {
-    errorMessage.value = err.response?.data?.detail || 'An error occurred while saving time slot.'
+    errorMessage.value = err.response?.data?.detail || 'An error occurred.'
   }
 }
 
-// 3. Start Editing a Time Slot
-const startEdit = (item: TimeSlot) => {
-  selectedSlot.value = item
-  isEditing.value = true
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+// 6. Handle Delete Click -> Open Confirm Delete Modal
+const handleDeleteClick = (id: string) => {
+  const target = timeSlots.value.find(ts => ts.id === id)
+  if (target) {
+    slotToDelete.value = target
+    isDeleteModalOpen.value = true
+  }
 }
 
-// 4. Cancel Edit Mode
-const cancelEdit = () => {
-  selectedSlot.value = null
-  isEditing.value = false
+// 7. Close Delete Modal
+const closeDeleteModal = () => {
+  isDeleteModalOpen.value = false
+  slotToDelete.value = null
 }
 
-// 5. Handle Delete
-const handleDelete = async (id: string) => {
-  if (!confirm('Are you sure you want to delete this time slot?')) return
+// 8. Confirm Delete Execution
+const confirmDelete = async () => {
+  if (!slotToDelete.value?.id) return
 
   errorMessage.value = ''
   successMessage.value = ''
   try {
-    await timeSlotService.deleteTimeSlot(id)
-    successMessage.value = 'Time slot deleted successfully!'
+    await timeSlotService.deleteTimeSlot(slotToDelete.value.id)
+    successMessage.value = t.value.msgTimeSlotDeleted
+    closeDeleteModal()
     await fetchTimeSlots()
   } catch (err: any) {
-    errorMessage.value = 'Failed to delete time slot.'
+    errorMessage.value = 'An error occurred while deleting time slot.'
+    closeDeleteModal()
   }
 }
 </script>
 
 <style scoped>
 .time-slots-page {
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 32px 20px;
+  padding: 32px 24px;
 }
 
 .page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 28px;
 }
 
-.page-header h2 {
+.header-text h2 {
   font-size: 1.8rem;
   color: #fff;
   margin: 0 0 6px 0;
 }
 
-.page-header p {
+.header-text p {
   color: #94a3b8;
   font-size: 0.95rem;
   margin: 0;
+}
+
+.btn-add-timeslot {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #fff;
+  padding: 12px 22px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-add-timeslot:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
 }
 
 .alert {

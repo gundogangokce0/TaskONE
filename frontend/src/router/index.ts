@@ -1,26 +1,56 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
-import authRoutes from '../modules/Auth/router'
-import teacherRoutes from '../modules/Teachers/router'
-import courseRoutes from '../modules/Courses/router'
-import classroomRoutes from '../modules/Classrooms/router'
-import schoolClassRoutes from '../modules/SchoolClasses/router'
-import timeSlotRoutes from '../modules/TimeSlots/router'
+import Login from '../modules/Auth/pages/Login.vue'
+import TeacherList from '../modules/Teachers/pages/TeacherList.vue'
+import CourseList from '../modules/Courses/pages/CourseList.vue'
+import ClassroomList from '../modules/Classrooms/pages/ClassroomList.vue'
+import SchoolClassList from '../modules/SchoolClasses/pages/SchoolClassList.vue'
+import TimeSlotList from '../modules/TimeSlots/pages/TimeSlotList.vue'
+import TimetableMatrix from '../modules/Timetable/pages/TimetableMatrix.vue'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    ...authRoutes,
+    {
+      path: '/login',
+      name: 'Login',
+      component: Login
+    },
     {
       path: '/',
       component: MainLayout,
-      redirect: '/teachers',
+      redirect: '/timetable',
       children: [
-        ...teacherRoutes,
-        ...courseRoutes,
-        ...classroomRoutes,
-        ...schoolClassRoutes,
-        ...timeSlotRoutes
+        {
+          path: 'timetable',
+          name: 'TimetableMatrix',
+          component: TimetableMatrix
+        },
+        {
+          path: 'teachers',
+          name: 'Teachers',
+          component: TeacherList
+        },
+        {
+          path: 'courses',
+          name: 'Courses',
+          component: CourseList
+        },
+        {
+          path: 'classrooms',
+          name: 'Classrooms',
+          component: ClassroomList
+        },
+        {
+          path: 'school-classes',
+          name: 'SchoolClasses',
+          component: SchoolClassList
+        },
+        {
+          path: 'time-slots',
+          name: 'TimeSlots',
+          component: TimeSlotList
+        }
       ]
     }
   ]

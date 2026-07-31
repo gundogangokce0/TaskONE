@@ -3,7 +3,13 @@ import api from '../../services/api'
 export interface Teacher {
   id?: string
   name: string
+  title?: string
+  email?: string
+  phone?: string
+  department?: string
+  office_number?: string
   off_day: string
+  max_daily_hours?: number
   created_at?: string
   updated_at?: string
   is_active?: boolean

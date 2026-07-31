@@ -2,7 +2,7 @@ import { RouteRecordRaw } from 'vue-router'
 
 const routes: RouteRecordRaw[] = [
   {
-    path: '/teachers',
+    path: 'teachers',
     name: 'Teachers',
     component: () => import('./pages/TeacherList.vue')
   }

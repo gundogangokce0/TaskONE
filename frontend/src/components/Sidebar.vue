@@ -4,38 +4,62 @@
     <div class="sidebar-brand">
       <div class="brand-icon">🎓</div>
       <div class="brand-text">
-        <h1>Timetable</h1>
-        <span>Optimization Portal</span>
+        <h1>{{ t.brandName }}</h1>
+        <span>{{ t.brandSub }}</span>
       </div>
+    </div>
+
+    <!-- Language Switcher Toggle Pill -->
+    <div class="lang-switcher">
+      <button 
+        class="lang-btn" 
+        :class="{ active: currentLang === 'en' }" 
+        @click="setLanguage('en')"
+      >
+        🇬🇧 EN
+      </button>
+      <button 
+        class="lang-btn" 
+        :class="{ active: currentLang === 'tr' }" 
+        @click="setLanguage('tr')"
+      >
+        🇹🇷 TR
+      </button>
     </div>
 
     <!-- Navigation Links -->
     <nav class="sidebar-nav">
-      <div class="nav-section-label">MANAGEMENT</div>
+      <div class="nav-section-label">{{ t.navSection }}</div>
       
+      <!-- Timetable Matrix View (New) -->
+      <router-link to="/timetable" class="nav-item">
+        <span class="nav-icon">📅</span>
+        <span class="nav-label">{{ t.navTimetable }}</span>
+      </router-link>
+
       <router-link to="/teachers" class="nav-item">
         <span class="nav-icon">👨‍🏫</span>
-        <span class="nav-label">Teachers</span>
+        <span class="nav-label">{{ t.navTeachers }}</span>
       </router-link>
 
       <router-link to="/courses" class="nav-item">
         <span class="nav-icon">📚</span>
-        <span class="nav-label">Courses</span>
+        <span class="nav-label">{{ t.navCourses }}</span>
       </router-link>
 
       <router-link to="/classrooms" class="nav-item">
         <span class="nav-icon">🏫</span>
-        <span class="nav-label">Classrooms</span>
+        <span class="nav-label">{{ t.navClassrooms }}</span>
       </router-link>
 
       <router-link to="/school-classes" class="nav-item">
         <span class="nav-icon">👥</span>
-        <span class="nav-label">School Classes</span>
+        <span class="nav-label">{{ t.navSchoolClasses }}</span>
       </router-link>
 
       <router-link to="/time-slots" class="nav-item">
         <span class="nav-icon">⏰</span>
-        <span class="nav-label">Time Slots</span>
+        <span class="nav-label">{{ t.navTimeSlots }}</span>
       </router-link>
     </nav>
 
@@ -45,11 +69,11 @@
         <div class="user-avatar">{{ userInitial }}</div>
         <div class="user-info">
           <span class="user-name">{{ userName }}</span>
-          <span class="user-role">Administrator</span>
+          <span class="user-role">{{ t.userRole }}</span>
         </div>
       </div>
-      <button class="btn-logout" @click="handleLogout" title="Logout">
-        <span>🚪 Logout</span>
+      <button class="btn-logout" @click="handleLogout" :title="t.logout">
+        <span>🚪 {{ t.logout }}</span>
       </button>
     </div>
   </aside>
@@ -58,6 +82,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { t, currentLang, setLanguage } from '../i18n'
 
 const router = useRouter()
 const userName = ref('Admin User')
@@ -106,8 +131,7 @@ const handleLogout = () => {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 24px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 24px 20px 16px 20px;
 }
 
 .brand-icon {
@@ -133,9 +157,41 @@ const handleLogout = () => {
   text-transform: uppercase;
 }
 
+.lang-switcher {
+  display: flex;
+  margin: 0 16px 12px 16px;
+  background: rgba(15, 23, 42, 0.8);
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lang-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 6px 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lang-btn:hover {
+  color: #fff;
+}
+
+.lang-btn.active {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+
 .sidebar-nav {
   flex: 1;
-  padding: 20px 12px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;

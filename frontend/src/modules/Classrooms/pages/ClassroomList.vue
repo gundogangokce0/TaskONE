@@ -1,30 +1,47 @@
 <template>
   <div class="classrooms-page">
+    <!-- Page Header with Action Button -->
     <div class="page-header">
-      <h2>🏫 Classroom Management</h2>
-      <p>Add, update, or remove classrooms and set laboratory designations.</p>
+      <div class="header-text">
+        <h2>🏫 {{ t.classroomsTitle }}</h2>
+        <p>{{ t.classroomsSub }}</p>
+      </div>
+      <button class="btn btn-add-classroom" @click="openCreateModal">
+        <span>➕ {{ t.addClassroomBtn }}</span>
+      </button>
     </div>
 
     <!-- Alert Notifications -->
     <div v-if="errorMessage" class="alert alert-error">
-      <span>{{ errorMessage }}</span>
+      <span>⚠️ {{ errorMessage }}</span>
     </div>
     <div v-if="successMessage" class="alert alert-success">
-      <span>{{ successMessage }}</span>
+      <span>✅ {{ successMessage }}</span>
     </div>
 
-    <!-- Classroom Form Component -->
+    <!-- Modal Dialog Component (Add / Edit) -->
     <ClassroomForm
+      :is-open="isModalOpen"
+      :title="isEditing ? t.editClassroomModalTitle : t.addClassroomModalTitle"
       :selected-classroom="selectedClassroom"
       :is-editing="isEditing"
       @save="handleSave"
-      @cancel="cancelEdit"
+      @cancel="closeModal"
+    />
+
+    <!-- Shared Reusable Delete Confirmation Modal -->
+    <ConfirmDeleteModal
+      :is-open="isDeleteModalOpen"
+      :title="t.editClassroomModalTitle"
+      :message="deleteModalMessage"
+      @confirm="confirmDelete"
+      @cancel="closeDeleteModal"
     />
 
     <!-- Loading Spinner -->
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>Loading classrooms...</p>
+      <p>Loading...</p>
     </div>
 
     <!-- Classroom Table Component -->
@@ -32,24 +49,37 @@
       v-else
       :classrooms="classrooms"
       @edit="startEdit"
-      @delete="handleDelete"
+      @delete="handleDeleteClick"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import ClassroomForm from '../components/ClassroomForm.vue'
 import ClassroomTable from '../components/ClassroomTable.vue'
+import ConfirmDeleteModal from '../../../components/ConfirmDeleteModal.vue'
 import { classroomService, type Classroom } from '../services'
+import { t } from '../../../i18n'
 
 const classrooms = ref<Classroom[]>([])
 const loading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
+// Form Modal State (Add / Edit)
+const isModalOpen = ref(false)
 const selectedClassroom = ref<Classroom | null>(null)
 const isEditing = ref(false)
+
+// Delete Modal State
+const isDeleteModalOpen = ref(false)
+const classroomToDelete = ref<Classroom | null>(null)
+
+const deleteModalMessage = computed(() => {
+  if (!classroomToDelete.value) return ''
+  return `"${classroomToDelete.value.name}" ${t.value.confirmDeleteClassroom}`
+})
 
 // 1. Fetch Classrooms on Component Mount
 const fetchClassrooms = async () => {
@@ -58,7 +88,7 @@ const fetchClassrooms = async () => {
   try {
     classrooms.value = await classroomService.getClassrooms()
   } catch (err: any) {
-    errorMessage.value = 'Failed to load classrooms from backend.'
+    errorMessage.value = 'Failed to fetch classroom list from backend server.'
   } finally {
     loading.value = false
   }
@@ -68,75 +98,119 @@ onMounted(() => {
   fetchClassrooms()
 })
 
-// 2. Handle Save (Create or Update)
+// 2. Open Create Modal
+const openCreateModal = () => {
+  selectedClassroom.value = null
+  isEditing.value = false
+  isModalOpen.value = true
+}
+
+// 3. Start Edit Modal
+const startEdit = (classroom: Classroom) => {
+  selectedClassroom.value = classroom
+  isEditing.value = true
+  isModalOpen.value = true
+}
+
+// 4. Close Form Modal
+const closeModal = () => {
+  isModalOpen.value = false
+}
+
+// 5. Handle Save (Create or Update)
 const handleSave = async (payload: Classroom) => {
   errorMessage.value = ''
   successMessage.value = ''
   try {
     if (isEditing.value && selectedClassroom.value?.id) {
       await classroomService.updateClassroom(selectedClassroom.value.id, payload)
-      successMessage.value = 'Classroom updated successfully!'
+      successMessage.value = t.value.msgClassroomUpdated
     } else {
       await classroomService.createClassroom(payload)
-      successMessage.value = 'Classroom created successfully!'
+      successMessage.value = t.value.msgClassroomAdded
     }
-    cancelEdit()
+    closeModal()
     await fetchClassrooms()
   } catch (err: any) {
-    errorMessage.value = err.response?.data?.detail || 'An error occurred while saving classroom.'
+    errorMessage.value = err.response?.data?.detail || 'An error occurred.'
   }
 }
 
-// 3. Start Editing a Classroom
-const startEdit = (classroom: Classroom) => {
-  selectedClassroom.value = classroom
-  isEditing.value = true
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+// 6. Handle Delete Click -> Open Confirm Delete Modal
+const handleDeleteClick = (id: string) => {
+  const target = classrooms.value.find(c => c.id === id)
+  if (target) {
+    classroomToDelete.value = target
+    isDeleteModalOpen.value = true
+  }
 }
 
-// 4. Cancel Edit Mode
-const cancelEdit = () => {
-  selectedClassroom.value = null
-  isEditing.value = false
+// 7. Close Delete Modal
+const closeDeleteModal = () => {
+  isDeleteModalOpen.value = false
+  classroomToDelete.value = null
 }
 
-// 5. Handle Delete
-const handleDelete = async (id: string) => {
-  if (!confirm('Are you sure you want to delete this classroom?')) return
+// 8. Confirm Delete Execution
+const confirmDelete = async () => {
+  if (!classroomToDelete.value?.id) return
 
   errorMessage.value = ''
   successMessage.value = ''
   try {
-    await classroomService.deleteClassroom(id)
-    successMessage.value = 'Classroom deleted successfully!'
+    await classroomService.deleteClassroom(classroomToDelete.value.id)
+    successMessage.value = t.value.msgClassroomDeleted
+    closeDeleteModal()
     await fetchClassrooms()
   } catch (err: any) {
-    errorMessage.value = 'Failed to delete classroom.'
+    errorMessage.value = 'An error occurred while deleting classroom.'
+    closeDeleteModal()
   }
 }
 </script>
 
 <style scoped>
 .classrooms-page {
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 32px 20px;
+  padding: 32px 24px;
 }
 
 .page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 28px;
 }
 
-.page-header h2 {
+.header-text h2 {
   font-size: 1.8rem;
   color: #fff;
   margin: 0 0 6px 0;
 }
 
-.page-header p {
+.header-text p {
   color: #94a3b8;
   font-size: 0.95rem;
   margin: 0;
+}
+
+.btn-add-classroom {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #fff;
+  padding: 12px 22px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-add-classroom:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
 }
 
 .alert {

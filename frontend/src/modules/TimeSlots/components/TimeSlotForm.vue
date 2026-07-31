@@ -1,52 +1,77 @@
 <template>
-  <div class="card form-card">
-    <h3>{{ isEditing ? 'Edit Time Slot' : 'Add New Time Slot' }}</h3>
-    <form @submit.prevent="handleSubmit">
-      <div class="form-group">
-        <label for="daySelect">Day of the Week (Haftanın Günü)</label>
-        <select id="daySelect" v-model="form.day" class="form-control" required>
-          <option value="" disabled>Select Day</option>
-          <option value="Monday">Monday</option>
-          <option value="Tuesday">Tuesday</option>
-          <option value="Wednesday">Wednesday</option>
-          <option value="Thursday">Thursday</option>
-          <option value="Friday">Friday</option>
-          <option value="Saturday">Saturday</option>
-          <option value="Sunday">Sunday</option>
-        </select>
-      </div>
+  <Teleport to="body">
+    <div v-if="isOpen" class="modal-overlay" @click.self="$emit('cancel')">
+      <div class="modal-card">
+        <!-- Header -->
+        <div class="modal-header">
+          <div class="header-title">
+            <span class="header-icon">{{ isEditing ? '✏️' : '⏰' }}</span>
+            <h3>{{ title || (isEditing ? t.editTimeSlotModalTitle : t.addTimeSlotModalTitle) }}</h3>
+          </div>
+          <button class="btn-close" @click="$emit('cancel')" :title="t.close">✕</button>
+        </div>
 
-      <div class="form-group">
-        <label for="hourInput">Period / Hour of Day (Ders Saati: 1 - 10)</label>
-        <input
-          id="hourInput"
-          v-model.number="form.hour"
-          type="number"
-          min="1"
-          max="12"
-          class="form-control"
-          placeholder="e.g. 1 (1st Period), 2 (2nd Period)"
-          required
-        />
-      </div>
+        <!-- Body Form -->
+        <form @submit.prevent="handleSubmit" class="modal-body">
+          <div class="form-section">
+            <div class="section-header">
+              <span class="section-icon">📅</span>
+              <h4>{{ t.sectionTimeSlotDetails }}</h4>
+            </div>
 
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary">
-          {{ isEditing ? 'Update Time Slot' : 'Save Time Slot' }}
-        </button>
-        <button v-if="isEditing" type="button" class="btn btn-secondary" @click="$emit('cancel')">
-          Cancel
-        </button>
+            <div class="form-grid grid-2">
+              <div class="form-group">
+                <label for="daySelect">{{ t.lblDayOfWeek }}</label>
+                <select id="daySelect" v-model="form.day" class="form-control" required>
+                  <option value="Monday">Monday (Pazartesi)</option>
+                  <option value="Tuesday">Tuesday (Salı)</option>
+                  <option value="Wednesday">Wednesday (Çarşamba)</option>
+                  <option value="Thursday">Thursday (Perşembe)</option>
+                  <option value="Friday">Friday (Cuma)</option>
+                  <option value="Saturday">Saturday (Cumartesi)</option>
+                  <option value="Sunday">Sunday (Pazar)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="hourInput">{{ t.lblLessonPeriod }}</label>
+                <input
+                  id="hourInput"
+                  v-model.number="form.hour"
+                  type="number"
+                  min="1"
+                  max="12"
+                  class="form-control"
+                  placeholder="e.g. 1"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer Actions -->
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="$emit('cancel')">
+              {{ t.cancel }}
+            </button>
+            <button type="submit" class="btn btn-primary">
+              {{ isEditing ? t.update : t.save }}
+            </button>
+          </div>
+        </form>
       </div>
-    </form>
-  </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
 import { reactive, watch } from 'vue'
 import type { TimeSlot } from '../services'
+import { t } from '../../../i18n'
 
 const props = defineProps<{
+  isOpen?: boolean
+  title?: string
   selectedSlot?: TimeSlot | null
   isEditing?: boolean
 }>()
@@ -61,15 +86,19 @@ const form = reactive<TimeSlot>({
   hour: 1
 })
 
+const resetForm = () => {
+  form.day = 'Monday'
+  form.hour = 1
+}
+
 watch(
   () => props.selectedSlot,
   (newVal) => {
     if (newVal) {
-      form.day = newVal.day
-      form.hour = newVal.hour
+      form.day = newVal.day || 'Monday'
+      form.hour = newVal.hour || 1
     } else {
-      form.day = 'Monday'
-      form.hour = 1
+      resetForm()
     }
   },
   { immediate: true }
@@ -78,48 +107,155 @@ watch(
 const handleSubmit = () => {
   emit('save', { ...form })
   if (!props.isEditing) {
-    form.day = 'Monday'
-    form.hour = 1
+    resetForm()
   }
 }
 </script>
 
 <style scoped>
-.form-card {
-  background: rgba(30, 41, 59, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 24px;
-  backdrop-filter: blur(12px);
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  box-sizing: border-box;
+  animation: fadeIn 0.25s ease-out;
 }
 
-.form-card h3 {
-  margin-top: 0;
-  margin-bottom: 20px;
+.modal-card {
+  background: rgba(30, 41, 59, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 550px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-icon {
+  font-size: 1.3rem;
+}
+
+.header-title h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
   color: #fff;
-  font-size: 1.25rem;
+}
+
+.btn-close {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #94a3b8;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-section {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.section-icon {
+  font-size: 1rem;
+}
+
+.section-header h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #818cf8;
+}
+
+.form-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.grid-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 600px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
 }
 
 .form-group {
-  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .form-group label {
-  display: block;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
+  font-weight: 500;
   color: #94a3b8;
-  margin-bottom: 8px;
 }
 
 .form-control {
   width: 100%;
-  padding: 12px 16px;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 10px 14px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   color: #fff;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   box-sizing: border-box;
 }
 
@@ -129,16 +265,21 @@ const handleSubmit = () => {
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
-.form-actions {
+.modal-footer {
   display: flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: 12px;
-  margin-top: 24px;
+  padding: 16px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.5);
 }
 
 .btn {
-  padding: 10px 20px;
+  padding: 10px 22px;
   border-radius: 8px;
   font-weight: 600;
+  font-size: 0.88rem;
   cursor: pointer;
   border: none;
   transition: all 0.2s ease;
@@ -155,12 +296,22 @@ const handleSubmit = () => {
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   color: #94a3b8;
 }
 
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 </style>

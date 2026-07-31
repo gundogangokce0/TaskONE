@@ -1,27 +1,31 @@
 <template>
   <div class="table-card">
     <div v-if="schoolClasses.length === 0" class="empty-state">
-      <p>No school classes found. Add your first class above!</p>
+      <div class="empty-icon">👥</div>
+      <p>{{ t.emptySchoolClasses }}</p>
     </div>
 
     <table v-else class="custom-table">
       <thead>
         <tr>
-          <th>Class / Section Name</th>
-          <th class="text-right">Actions</th>
+          <th>{{ t.colClassName }}</th>
+          <th class="text-right">{{ t.actions }}</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="item in schoolClasses" :key="item.id">
-          <td class="font-medium">
-            <span class="class-icon">👥</span> {{ item.name }}
+        <tr v-for="sc in schoolClasses" :key="sc.id">
+          <td>
+            <div class="class-info">
+              <span class="class-name">👥 {{ sc.name }}</span>
+            </div>
           </td>
+
           <td class="text-right">
-            <button class="btn-icon btn-edit" @click="$emit('edit', item)" title="Edit Class">
-              ✏️ Edit
+            <button class="btn-icon btn-edit" @click="$emit('edit', sc)" :title="t.edit">
+              ✏️ {{ t.edit }}
             </button>
-            <button class="btn-icon btn-delete" @click="item.id && $emit('delete', item.id)" title="Delete Class">
-              🗑️ Delete
+            <button class="btn-icon btn-delete" @click="sc.id && $emit('delete', sc.id)" :title="t.delete">
+              🗑️ {{ t.delete }}
             </button>
           </td>
         </tr>
@@ -32,6 +36,7 @@
 
 <script setup lang="ts">
 import type { SchoolClass } from '../services'
+import { t } from '../../../i18n'
 
 defineProps<{
   schoolClasses: SchoolClass[]
@@ -53,9 +58,14 @@ defineEmits<{
 }
 
 .empty-state {
-  padding: 40px;
+  padding: 48px 20px;
   text-align: center;
   color: #94a3b8;
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
 }
 
 .custom-table {
@@ -66,7 +76,7 @@ defineEmits<{
 
 .custom-table th {
   background: rgba(15, 23, 42, 0.8);
-  padding: 16px 24px;
+  padding: 16px 20px;
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -75,10 +85,11 @@ defineEmits<{
 }
 
 .custom-table td {
-  padding: 16px 24px;
+  padding: 16px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   color: #e2e8f0;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
+  vertical-align: middle;
 }
 
 .custom-table tr:last-child td {
@@ -89,13 +100,14 @@ defineEmits<{
   background: rgba(255, 255, 255, 0.02);
 }
 
-.font-medium {
-  font-weight: 600;
-  color: #fff;
+.class-info {
+  display: flex;
+  align-items: center;
 }
 
-.class-icon {
-  margin-right: 8px;
+.class-name {
+  font-weight: 600;
+  color: #fff;
 }
 
 .text-right {
@@ -109,7 +121,7 @@ defineEmits<{
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 0.85rem;
-  margin-left: 8px;
+  margin-left: 6px;
   transition: all 0.2s ease;
 }
 

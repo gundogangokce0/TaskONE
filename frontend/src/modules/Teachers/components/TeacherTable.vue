@@ -1,29 +1,64 @@
 <template>
   <div class="table-card">
     <div v-if="teachers.length === 0" class="empty-state">
-      <p>No teachers found. Add your first teacher above!</p>
+      <div class="empty-icon">👨‍🏫</div>
+      <p>{{ t.emptyTeachers }}</p>
     </div>
 
     <table v-else class="custom-table">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Off Day</th>
-          <th class="text-right">Actions</th>
+          <th>{{ t.colTeacherInfo }}</th>
+          <th>{{ t.colDept }}</th>
+          <th>{{ t.colContact }}</th>
+          <th>{{ t.colSchedule }}</th>
+          <th class="text-right">{{ t.actions }}</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="teacher in teachers" :key="teacher.id">
-          <td class="font-medium">{{ teacher.name }}</td>
+          <!-- 1. Name & Title & Office -->
           <td>
-            <span class="badge badge-day">{{ teacher.off_day }}</span>
+            <div class="teacher-main-info">
+              <span class="teacher-title-badge">{{ teacher.title || 'Prof. Dr.' }}</span>
+              <span class="teacher-name">{{ teacher.name }}</span>
+            </div>
+            <div v-if="teacher.office_number" class="office-subtext">
+              🏢 Room: {{ teacher.office_number }}
+            </div>
           </td>
+
+          <!-- 2. Department / Branch -->
+          <td>
+            <span class="badge badge-dept">
+              🎓 {{ teacher.department || 'General' }}
+            </span>
+          </td>
+
+          <!-- 3. Contact Info -->
+          <td>
+            <div class="contact-info">
+              <span v-if="teacher.email" class="contact-item">✉️ {{ teacher.email }}</span>
+              <span v-if="teacher.phone" class="contact-item">📞 {{ teacher.phone }}</span>
+              <span v-if="!teacher.email && !teacher.phone" class="contact-empty">-</span>
+            </div>
+          </td>
+
+          <!-- 4. Off Day & Max Daily Hours -->
+          <td>
+            <div class="schedule-badges">
+              <span class="badge badge-day">📅 {{ teacher.off_day }}</span>
+              <span class="badge badge-hours">⏰ Max {{ teacher.max_daily_hours || 6 }} Hours</span>
+            </div>
+          </td>
+
+          <!-- 5. Actions -->
           <td class="text-right">
-            <button class="btn-icon btn-edit" @click="$emit('edit', teacher)" title="Edit Teacher">
-              ✏️ Edit
+            <button class="btn-icon btn-edit" @click="$emit('edit', teacher)" :title="t.edit">
+              ✏️ {{ t.edit }}
             </button>
-            <button class="btn-icon btn-delete" @click="teacher.id && $emit('delete', teacher.id)" title="Delete Teacher">
-              🗑️ Delete
+            <button class="btn-icon btn-delete" @click="teacher.id && $emit('delete', teacher.id)" :title="t.delete">
+              🗑️ {{ t.delete }}
             </button>
           </td>
         </tr>
@@ -34,6 +69,7 @@
 
 <script setup lang="ts">
 import type { Teacher } from '../services'
+import { t } from '../../../i18n'
 
 defineProps<{
   teachers: Teacher[]
@@ -55,9 +91,14 @@ defineEmits<{
 }
 
 .empty-state {
-  padding: 40px;
+  padding: 48px 20px;
   text-align: center;
   color: #94a3b8;
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
 }
 
 .custom-table {
@@ -68,7 +109,7 @@ defineEmits<{
 
 .custom-table th {
   background: rgba(15, 23, 42, 0.8);
-  padding: 16px 24px;
+  padding: 16px 20px;
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -77,10 +118,11 @@ defineEmits<{
 }
 
 .custom-table td {
-  padding: 16px 24px;
+  padding: 16px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   color: #e2e8f0;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
+  vertical-align: middle;
 }
 
 .custom-table tr:last-child td {
@@ -91,20 +133,80 @@ defineEmits<{
   background: rgba(255, 255, 255, 0.02);
 }
 
-.font-medium {
+.teacher-main-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.teacher-title-badge {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.teacher-name {
   font-weight: 600;
   color: #fff;
 }
 
-.badge-day {
-  display: inline-block;
+.office-subtext {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
   padding: 4px 10px;
-  background: rgba(99, 102, 241, 0.15);
-  color: #818cf8;
-  border: 1px solid rgba(99, 102, 241, 0.3);
   border-radius: 20px;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 500;
+}
+
+.badge-dept {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.badge-day {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.badge-hours {
+  background: rgba(234, 179, 8, 0.15);
+  color: #fde047;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.contact-item {
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+.contact-empty {
+  color: #64748b;
+}
+
+.schedule-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
 }
 
 .text-right {
@@ -118,7 +220,7 @@ defineEmits<{
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 0.85rem;
-  margin-left: 8px;
+  margin-left: 6px;
   transition: all 0.2s ease;
 }
 

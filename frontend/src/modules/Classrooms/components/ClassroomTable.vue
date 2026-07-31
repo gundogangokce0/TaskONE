@@ -1,31 +1,41 @@
 <template>
   <div class="table-card">
     <div v-if="classrooms.length === 0" class="empty-state">
-      <p>No classrooms found. Add your first classroom above!</p>
+      <div class="empty-icon">🏫</div>
+      <p>{{ t.emptyClassrooms }}</p>
     </div>
 
     <table v-else class="custom-table">
       <thead>
         <tr>
-          <th>Classroom Name</th>
-          <th>Type</th>
-          <th class="text-right">Actions</th>
+          <th>{{ t.colClassroomName }}</th>
+          <th>{{ t.colFacilityType }}</th>
+          <th class="text-right">{{ t.actions }}</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="room in classrooms" :key="room.id">
-          <td class="font-medium">{{ room.name }}</td>
+        <tr v-for="classroom in classrooms" :key="classroom.id">
           <td>
-            <span :class="['badge', room.is_lab ? 'badge-lab-yes' : 'badge-lab-no']">
-              {{ room.is_lab ? '🖥️ Laboratory' : '🏛️ Lecture Room' }}
+            <div class="classroom-info">
+              <span class="classroom-name">{{ classroom.name }}</span>
+            </div>
+          </td>
+
+          <td>
+            <span v-if="classroom.is_lab" class="badge badge-lab">
+              🖥️ {{ t.badgeLabFacility }}
+            </span>
+            <span v-else class="badge badge-standard">
+              🏛️ {{ t.badgeStandardFacility }}
             </span>
           </td>
+
           <td class="text-right">
-            <button class="btn-icon btn-edit" @click="$emit('edit', room)" title="Edit Classroom">
-              ✏️ Edit
+            <button class="btn-icon btn-edit" @click="$emit('edit', classroom)" :title="t.edit">
+              ✏️ {{ t.edit }}
             </button>
-            <button class="btn-icon btn-delete" @click="room.id && $emit('delete', room.id)" title="Delete Classroom">
-              🗑️ Delete
+            <button class="btn-icon btn-delete" @click="classroom.id && $emit('delete', classroom.id)" :title="t.delete">
+              🗑️ {{ t.delete }}
             </button>
           </td>
         </tr>
@@ -36,6 +46,7 @@
 
 <script setup lang="ts">
 import type { Classroom } from '../services'
+import { t } from '../../../i18n'
 
 defineProps<{
   classrooms: Classroom[]
@@ -57,9 +68,14 @@ defineEmits<{
 }
 
 .empty-state {
-  padding: 40px;
+  padding: 48px 20px;
   text-align: center;
   color: #94a3b8;
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
 }
 
 .custom-table {
@@ -70,7 +86,7 @@ defineEmits<{
 
 .custom-table th {
   background: rgba(15, 23, 42, 0.8);
-  padding: 16px 24px;
+  padding: 16px 20px;
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -79,10 +95,11 @@ defineEmits<{
 }
 
 .custom-table td {
-  padding: 16px 24px;
+  padding: 16px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   color: #e2e8f0;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
+  vertical-align: middle;
 }
 
 .custom-table tr:last-child td {
@@ -93,29 +110,35 @@ defineEmits<{
   background: rgba(255, 255, 255, 0.02);
 }
 
-.font-medium {
+.classroom-info {
+  display: flex;
+  align-items: center;
+}
+
+.classroom-name {
   font-weight: 600;
   color: #fff;
 }
 
 .badge {
-  display: inline-block;
-  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
   border-radius: 20px;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 500;
 }
 
-.badge-lab-yes {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+.badge-lab {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
-.badge-lab-no {
-  background: rgba(148, 163, 184, 0.15);
+.badge-standard {
+  background: rgba(148, 163, 184, 0.1);
   color: #94a3b8;
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .text-right {
@@ -129,7 +152,7 @@ defineEmits<{
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 0.85rem;
-  margin-left: 8px;
+  margin-left: 6px;
   transition: all 0.2s ease;
 }
 

@@ -1,30 +1,47 @@
 <template>
   <div class="school-classes-page">
+    <!-- Page Header with Action Button -->
     <div class="page-header">
-      <h2>👥 Class & Section Management</h2>
-      <p>Add, update, or remove school classes and grade sections.</p>
+      <div class="header-text">
+        <h2>👥 {{ t.schoolClassesTitle }}</h2>
+        <p>{{ t.schoolClassesSub }}</p>
+      </div>
+      <button class="btn btn-add-class" @click="openCreateModal">
+        <span>➕ {{ t.addClassBtn }}</span>
+      </button>
     </div>
 
     <!-- Alert Notifications -->
     <div v-if="errorMessage" class="alert alert-error">
-      <span>{{ errorMessage }}</span>
+      <span>⚠️ {{ errorMessage }}</span>
     </div>
     <div v-if="successMessage" class="alert alert-success">
-      <span>{{ successMessage }}</span>
+      <span>✅ {{ successMessage }}</span>
     </div>
 
-    <!-- SchoolClass Form Component -->
+    <!-- Modal Dialog Component (Add / Edit) -->
     <SchoolClassForm
+      :is-open="isModalOpen"
+      :title="isEditing ? t.editClassModalTitle : t.addClassModalTitle"
       :selected-class="selectedClass"
       :is-editing="isEditing"
       @save="handleSave"
-      @cancel="cancelEdit"
+      @cancel="closeModal"
+    />
+
+    <!-- Shared Reusable Delete Confirmation Modal -->
+    <ConfirmDeleteModal
+      :is-open="isDeleteModalOpen"
+      :title="t.editClassModalTitle"
+      :message="deleteModalMessage"
+      @confirm="confirmDelete"
+      @cancel="closeDeleteModal"
     />
 
     <!-- Loading Spinner -->
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>Loading school classes...</p>
+      <p>Loading...</p>
     </div>
 
     <!-- SchoolClass Table Component -->
@@ -32,33 +49,46 @@
       v-else
       :school-classes="schoolClasses"
       @edit="startEdit"
-      @delete="handleDelete"
+      @delete="handleDeleteClick"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import SchoolClassForm from '../components/SchoolClassForm.vue'
 import SchoolClassTable from '../components/SchoolClassTable.vue'
+import ConfirmDeleteModal from '../../../components/ConfirmDeleteModal.vue'
 import { schoolClassService, type SchoolClass } from '../services'
+import { t } from '../../../i18n'
 
 const schoolClasses = ref<SchoolClass[]>([])
 const loading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
+// Form Modal State (Add / Edit)
+const isModalOpen = ref(false)
 const selectedClass = ref<SchoolClass | null>(null)
 const isEditing = ref(false)
 
-// 1. Fetch School Classes on Component Mount
+// Delete Modal State
+const isDeleteModalOpen = ref(false)
+const classToDelete = ref<SchoolClass | null>(null)
+
+const deleteModalMessage = computed(() => {
+  if (!classToDelete.value) return ''
+  return `"${classToDelete.value.name}" ${t.value.confirmDeleteClass}`
+})
+
+// 1. Fetch SchoolClasses on Component Mount
 const fetchSchoolClasses = async () => {
   loading.value = true
   errorMessage.value = ''
   try {
     schoolClasses.value = await schoolClassService.getSchoolClasses()
   } catch (err: any) {
-    errorMessage.value = 'Failed to load school classes from backend.'
+    errorMessage.value = 'Failed to fetch school class list from backend server.'
   } finally {
     loading.value = false
   }
@@ -68,75 +98,119 @@ onMounted(() => {
   fetchSchoolClasses()
 })
 
-// 2. Handle Save (Create or Update)
+// 2. Open Create Modal
+const openCreateModal = () => {
+  selectedClass.value = null
+  isEditing.value = false
+  isModalOpen.value = true
+}
+
+// 3. Start Edit Modal
+const startEdit = (sc: SchoolClass) => {
+  selectedClass.value = sc
+  isEditing.value = true
+  isModalOpen.value = true
+}
+
+// 4. Close Form Modal
+const closeModal = () => {
+  isModalOpen.value = false
+}
+
+// 5. Handle Save (Create or Update)
 const handleSave = async (payload: SchoolClass) => {
   errorMessage.value = ''
   successMessage.value = ''
   try {
     if (isEditing.value && selectedClass.value?.id) {
       await schoolClassService.updateSchoolClass(selectedClass.value.id, payload)
-      successMessage.value = 'School class updated successfully!'
+      successMessage.value = t.value.msgClassUpdated
     } else {
       await schoolClassService.createSchoolClass(payload)
-      successMessage.value = 'School class created successfully!'
+      successMessage.value = t.value.msgClassAdded
     }
-    cancelEdit()
+    closeModal()
     await fetchSchoolClasses()
   } catch (err: any) {
-    errorMessage.value = err.response?.data?.detail || 'An error occurred while saving class.'
+    errorMessage.value = err.response?.data?.detail || 'An error occurred.'
   }
 }
 
-// 3. Start Editing a School Class
-const startEdit = (item: SchoolClass) => {
-  selectedClass.value = item
-  isEditing.value = true
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+// 6. Handle Delete Click -> Open Confirm Delete Modal
+const handleDeleteClick = (id: string) => {
+  const target = schoolClasses.value.find(c => c.id === id)
+  if (target) {
+    classToDelete.value = target
+    isDeleteModalOpen.value = true
+  }
 }
 
-// 4. Cancel Edit Mode
-const cancelEdit = () => {
-  selectedClass.value = null
-  isEditing.value = false
+// 7. Close Delete Modal
+const closeDeleteModal = () => {
+  isDeleteModalOpen.value = false
+  classToDelete.value = null
 }
 
-// 5. Handle Delete
-const handleDelete = async (id: string) => {
-  if (!confirm('Are you sure you want to delete this class?')) return
+// 8. Confirm Delete Execution
+const confirmDelete = async () => {
+  if (!classToDelete.value?.id) return
 
   errorMessage.value = ''
   successMessage.value = ''
   try {
-    await schoolClassService.deleteSchoolClass(id)
-    successMessage.value = 'School class deleted successfully!'
+    await schoolClassService.deleteSchoolClass(classToDelete.value.id)
+    successMessage.value = t.value.msgClassDeleted
+    closeDeleteModal()
     await fetchSchoolClasses()
   } catch (err: any) {
-    errorMessage.value = 'Failed to delete class.'
+    errorMessage.value = 'An error occurred while deleting class.'
+    closeDeleteModal()
   }
 }
 </script>
 
 <style scoped>
 .school-classes-page {
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 32px 20px;
+  padding: 32px 24px;
 }
 
 .page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 28px;
 }
 
-.page-header h2 {
+.header-text h2 {
   font-size: 1.8rem;
   color: #fff;
   margin: 0 0 6px 0;
 }
 
-.page-header p {
+.header-text p {
   color: #94a3b8;
   font-size: 0.95rem;
   margin: 0;
+}
+
+.btn-add-class {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #fff;
+  padding: 12px 22px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-add-class:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
 }
 
 .alert {
